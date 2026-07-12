@@ -1,0 +1,60 @@
+# Sobe o ambiente completo do OpsFlow: banco (com seed), backend e frontend.
+# Uso: a partir da pasta docker/, rodar `docker compose up --build`
+#
+# Frontend: http://localhost:5173
+# Backend:  http://localhost:8000/api/v1/health
+# Swagger:  http://localhost:8000/docs
+#
+# Login de exemplo (ver database/init.sql): admin@opsflow.com / OpsFlow123!
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: opsflow
+      POSTGRES_PASSWORD: opsflow
+      POSTGRES_DB: opsflow
+    ports:
+      - "5432:5432"
+    volumes:
+      - opsflow_db_data:/var/lib/postgresql/data
+      - ../database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U opsflow"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ..
+      dockerfile: docker/backend.Dockerfile
+    environment:
+      DATABASE_URL: postgresql+psycopg2://opsflow:opsflow@db:5432/opsflow
+      JWT_SECRET_KEY: change-me-in-production
+      ENVIRONMENT: development
+      CORS_ORIGINS: '["http://localhost:5173"]'
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ../backend:/app
+
+  frontend:
+    build:
+      context: ..
+      dockerfile: docker/frontend.Dockerfile
+    environment:
+      VITE_API_URL: http://localhost:8000/api/v1
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+    volumes:
+      - ../frontend:/app
+      - /app/node_modules
+
+volumes:
+  opsflow_db_data:

@@ -1,0 +1,6 @@
+# Cada subprojeto tem seu próprio .gitignore (backend/, frontend/).
+# Itens genéricos de SO/editor ficam aqui.
+.DS_Store
+*.swp
+.vscode/
+.idea/
