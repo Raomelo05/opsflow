@@ -2,6 +2,142 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * OpsFlow Design System — Design Tokens
+ * ver docs/design-system.md para a documentação completa.
+ *
+ * Nota de nomenclatura: o Tailwind usa um único namespace de cor para
+ * bg-/text-/border-*. Por isso "primary" aqui é reservado para a cor de
+ * marca (verde) — bg-primary, text-primary (texto/ícone na cor de marca),
+ * border-primary. A hierarquia de texto do corpo (principal/secundário/
+ * desabilitado) usa o prefixo "ink" (text-ink, text-ink-secondary,
+ * text-ink-disabled) para não colidir com a cor de marca.
+ */
+
 :root {
+  /* Marca (verde) */
+  --color-primary: #39A36F;       /* Primary 500 */
+  --color-primary-hover: #2D8A63; /* Primary 600 */
+  --color-primary-soft: #E2F6EA;  /* Primary 100 */
+
+  --primary-900: #0B3D2E;
+  --primary-800: #145A41;
+  --primary-700: #1B6B4E;
+  --primary-600: #2D8A63;
+  --primary-500: #39A36F;
+  --primary-400: #5CC18A;
+  --primary-300: #8BD8AE;
+  --primary-200: #B7EACD;
+  --primary-100: #E2F6EA;
+
+  /* Superfícies */
+  --color-background: #F4F8F4;
+  --color-background-secondary: #ECF3ED;
+  --color-surface: #FFFFFF;
+  --color-sidebar: #F1F7F2;
+  --color-border: #DCE6DF;
+
+  /* Texto */
+  --text-ink: #14211A;
+  --text-ink-secondary: #5E6B63;
+  --text-ink-disabled: #A2AAA5;
+
+  /* Semântico (formulários, alertas) — reaproveita a mesma paleta usada em
+     status/prioridade para manter o sistema coeso */
+  --color-success: #2D8A63;
+  --color-warning: #F0B429;
+  --color-danger: #E5484D;
+  --color-info: #3B82F6;
+
+  /* Status do ticket */
+  --status-aberto: #3B82F6;
+  --status-andamento: #F0B429;
+  --status-aguardando: #8B5CF6;
+  --status-resolvido: #2D8A63;
+  --status-fechado: #9CA3AF;
+  --status-reaberto: #F0803C;
+  --status-vencido: #E5484D;
+
+  /* Prioridade do ticket */
+  --priority-critica: #E5484D;
+  --priority-alta: #F0803C;
+  --priority-media: #F0B429;
+  --priority-baixa: #2D8A63;
+
+  /* Sombras — muito discretas */
+  --shadow-sm: 0 1px 2px rgba(11, 61, 46, 0.06);
+  --shadow-card: 0 1px 3px rgba(11, 61, 46, 0.07), 0 1px 2px rgba(11, 61, 46, 0.04);
+  --shadow-hover: 0 8px 20px rgba(11, 61, 46, 0.10);
+  --shadow-lg: 0 20px 40px rgba(11, 61, 46, 0.16);
+
+  /* Raios */
+  --radius-sm: 10px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+
   color-scheme: light;
+}
+
+.dark {
+  --color-primary: #49B97F;
+  --color-primary-hover: #5CC18A;
+  --color-primary-soft: rgba(73, 185, 127, 0.14);
+
+  --color-background: #0F1412;
+  --color-background-secondary: #1E2722; /* "Card" no tema escuro — mais elevado que a surface */
+  --color-surface: #18201C;
+  --color-sidebar: #111915;
+  --color-border: #263129;
+
+  --text-ink: #F5F8F6;
+  --text-ink-secondary: #A8B4AE;
+  --text-ink-disabled: #5A655F;
+
+  --color-success: #49B97F;
+  --color-warning: #F0B429;
+  --color-danger: #E5484D;
+  --color-info: #5B9BF6;
+
+  --status-aberto: #5B9BF6;
+  --status-andamento: #F0B429;
+  --status-aguardando: #A78BFA;
+  --status-resolvido: #49B97F;
+  --status-fechado: #7C8A83;
+  --status-reaberto: #F0925C;
+  --status-vencido: #EB6B70;
+
+  --priority-critica: #EB6B70;
+  --priority-alta: #F0925C;
+  --priority-media: #F0B429;
+  --priority-baixa: #49B97F;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.24);
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow-hover: 0 8px 20px rgba(0, 0, 0, 0.36);
+  --shadow-lg: 0 20px 40px rgba(0, 0, 0, 0.5);
+
+  color-scheme: dark;
+}
+
+* {
+  border-color: var(--color-border);
+}
+
+body {
+  transition: background-color 200ms ease, color 200ms ease;
+}
+
+/* Foco visível — acessibilidade, não removemos o outline, só o estilizamos */
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

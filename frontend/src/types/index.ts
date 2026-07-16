@@ -37,6 +37,8 @@ export interface Ticket {
   plataforma: string
   prazo_sla: string | null
   criado_em: string
+  atualizado_em: string
+  resolvido_em: string | null
 }
 
 export interface Comentario {

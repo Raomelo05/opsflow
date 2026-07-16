@@ -1,6 +1,15 @@
 import { type FormEvent, useEffect, useState } from 'react'
+import { ArrowDown, ArrowRight, Plus, Workflow as WorkflowIcon } from 'lucide-react'
 import { listarCategorias } from '../services/categories'
 import { criarWorkflow, listarWorkflows, removerWorkflow } from '../services/workflows'
+import { PageHeader } from '../components/ui/PageHeader'
+import { Button } from '../components/ui/Button'
+import { Card } from '../components/ui/Card'
+import { Input } from '../components/ui/Input'
+import { Select } from '../components/ui/Select'
+import { Drawer } from '../components/ui/Drawer'
+import { EmptyState } from '../components/ui/EmptyState'
+import { LoadingSkeleton } from '../components/ui/LoadingSkeleton'
 import type { Categoria, CondicaoCampo, TipoAcao, Workflow } from '../types'
 
 const CAMPOS: { valor: CondicaoCampo; label: string }[] = [
@@ -25,7 +34,7 @@ interface AcaoForm {
 export default function WorkflowBuilder() {
   const [workflows, setWorkflows] = useState<Workflow[]>([])
   const [categorias, setCategorias] = useState<Categoria[]>([])
-  const [mostrarForm, setMostrarForm] = useState(false)
+  const [drawerAberto, setDrawerAberto] = useState(false)
   const [carregando, setCarregando] = useState(true)
 
   function carregar() {
@@ -47,62 +56,66 @@ export default function WorkflowBuilder() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-ink">Workflow Builder</h1>
-          <p className="text-sm text-slate">Regras automáticas do tipo "se condição → então ações".</p>
-        </div>
-        <button
-          onClick={() => setMostrarForm((v) => !v)}
-          className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark"
-        >
-          {mostrarForm ? 'Cancelar' : '+ Nova regra'}
-        </button>
-      </div>
+      <PageHeader
+        title="Workflow Builder"
+        subtitle='Regras automáticas do tipo "se condição → então ações".'
+        actions={
+          <Button onClick={() => setDrawerAberto(true)}>
+            <Plus className="h-4 w-4" />
+            Nova regra
+          </Button>
+        }
+      />
 
-      {mostrarForm && (
+      <Drawer open={drawerAberto} onClose={() => setDrawerAberto(false)} title="Nova regra de automação">
         <NovaRegraForm
           categorias={categorias}
           onCriada={() => {
-            setMostrarForm(false)
+            setDrawerAberto(false)
             carregar()
           }}
         />
-      )}
+      </Drawer>
 
-      {carregando && <p className="text-sm text-slate">Carregando regras...</p>}
-
-      <div className="space-y-4">
-        {!carregando && workflows.length === 0 && (
-          <p className="text-sm text-slate">Nenhuma regra cadastrada ainda.</p>
-        )}
-        {workflows.map((w) => (
-          <div key={w.id} className="rounded-lg border border-border bg-white p-5">
-            <div className="flex items-start justify-between">
-              <h2 className="font-medium text-ink">{w.nome}</h2>
-              <button
-                onClick={() => excluir(w.id)}
-                className="text-xs text-priority-critica underline decoration-dotted"
-              >
-                Remover
-              </button>
-            </div>
-            <div className="mt-3 flex flex-wrap items-center gap-2 font-mono text-sm">
-              <span className="rounded-md bg-surface px-2 py-1 text-ink">
-                Se {w.condicao_campo} = {w.condicao_campo === 'categoria' ? categoriaPorId[w.condicao_valor] ?? w.condicao_valor : w.condicao_valor}
-              </span>
-              {w.acoes.map((a, idx) => (
-                <span key={idx} className="flex items-center gap-2">
-                  <span className="text-slate">→</span>
-                  <span className="rounded-md bg-primary-light px-2 py-1 text-primary-dark">
-                    {ACOES.find((op) => op.valor === a.tipo_acao)?.label ?? a.tipo_acao}: {a.valor}
-                  </span>
+      {carregando ? (
+        <LoadingSkeleton rows={3} height={90} />
+      ) : workflows.length === 0 ? (
+        <EmptyState
+          icon={WorkflowIcon}
+          title="Nenhuma regra cadastrada ainda"
+          description="Crie regras para automatizar atribuições, prazos e respostas a chamados repetitivos."
+          action={<Button size="sm" onClick={() => setDrawerAberto(true)}>+ Nova regra</Button>}
+        />
+      ) : (
+        <div className="space-y-4">
+          {workflows.map((w) => (
+            <Card key={w.id}>
+              <div className="flex items-start justify-between">
+                <h2 className="font-semibold text-ink">{w.nome}</h2>
+                <button
+                  onClick={() => excluir(w.id)}
+                  className="text-xs text-danger underline decoration-dotted transition-colors hover:text-danger/80"
+                >
+                  Remover
+                </button>
+              </div>
+              <div className="mt-3 flex flex-wrap items-center gap-2 font-mono text-sm">
+                <span className="rounded-md bg-background-secondary px-2 py-1 text-ink">
+                  Se {w.condicao_campo} = {w.condicao_campo === 'categoria' ? categoriaPorId[w.condicao_valor] ?? w.condicao_valor : w.condicao_valor}
                 </span>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
+                {w.acoes.map((a, idx) => (
+                  <span key={idx} className="flex items-center gap-2">
+                    <ArrowRight className="h-3.5 w-3.5 text-ink-disabled" />
+                    <span className="rounded-md bg-primary-soft px-2 py-1 text-primary-hover">
+                      {ACOES.find((op) => op.valor === a.tipo_acao)?.label ?? a.tipo_acao}: {a.valor}
+                    </span>
+                  </span>
+                ))}
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
@@ -143,81 +156,53 @@ function NovaRegraForm({ categorias, onCriada }: { categorias: Categoria[]; onCr
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5 rounded-lg border border-border bg-white p-5">
-      <h2 className="text-sm font-medium text-ink">Nova regra</h2>
+    <form onSubmit={handleSubmit} className="space-y-5">
+      <Input label="Nome da regra" required value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Ex.: Priorizar chamados de infraestrutura" />
 
-      <div>
-        <label className="mb-1 block text-xs font-medium text-slate">Nome da regra</label>
-        <input
-          required
-          value={nome}
-          onChange={(e) => setNome(e.target.value)}
-          placeholder="Ex.: Priorizar chamados de infraestrutura"
-          className="w-full rounded-md border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none"
-        />
-      </div>
-
-      <div className="rounded-md bg-surface p-4">
-        <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate">Se</p>
-        <div className="grid gap-3 md:grid-cols-2">
-          <select
-            value={condicaoCampo}
-            onChange={(e) => setCondicaoCampo(e.target.value as CondicaoCampo)}
-            className="rounded-md border border-border px-3 py-2 text-sm"
-          >
+      <div className="rounded-md bg-background-secondary p-4">
+        <p className="mb-2 text-xs font-medium uppercase tracking-wide text-ink-secondary">Se</p>
+        <div className="grid gap-3">
+          <Select value={condicaoCampo} onChange={(e) => setCondicaoCampo(e.target.value as CondicaoCampo)}>
             {CAMPOS.map((c) => <option key={c.valor} value={c.valor}>{c.label}</option>)}
-          </select>
+          </Select>
 
           {condicaoCampo === 'categoria' ? (
-            <select
-              value={condicaoValor}
-              onChange={(e) => setCondicaoValor(e.target.value)}
-              className="rounded-md border border-border px-3 py-2 text-sm"
-            >
+            <Select value={condicaoValor} onChange={(e) => setCondicaoValor(e.target.value)}>
               <option value="">Selecione a categoria...</option>
               {categorias.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}
-            </select>
+            </Select>
           ) : condicaoCampo === 'prioridade' ? (
-            <select
-              value={condicaoValor}
-              onChange={(e) => setCondicaoValor(e.target.value)}
-              className="rounded-md border border-border px-3 py-2 text-sm"
-            >
+            <Select value={condicaoValor} onChange={(e) => setCondicaoValor(e.target.value)}>
               {['baixa', 'media', 'alta', 'critica'].map((p) => <option key={p} value={p}>{p}</option>)}
-            </select>
+            </Select>
           ) : (
-            <input
+            <Input
               required
               value={condicaoValor}
               onChange={(e) => setCondicaoValor(e.target.value)}
               placeholder={condicaoCampo === 'pais' ? 'Ex.: Brasil' : 'Ex.: Sistema Financeiro'}
-              className="rounded-md border border-border px-3 py-2 text-sm"
             />
           )}
         </div>
       </div>
 
       <div className="space-y-3">
-        <p className="text-xs font-medium uppercase tracking-wide text-slate">Então</p>
+        <p className="text-xs font-medium uppercase tracking-wide text-ink-secondary">Então</p>
         {acoes.map((acao, idx) => (
-          <div key={idx} className="flex items-center gap-2">
-            <span className="text-slate">↓</span>
-            <select
-              value={acao.tipo_acao}
-              onChange={(e) => atualizarAcao(idx, 'tipo_acao', e.target.value)}
-              className="rounded-md border border-border px-3 py-2 text-sm"
-            >
+          <div key={idx} className="flex items-start gap-2">
+            <ArrowDown className="mt-2.5 h-3.5 w-3.5 shrink-0 text-ink-disabled" />
+            <Select className="w-auto shrink-0" value={acao.tipo_acao} onChange={(e) => atualizarAcao(idx, 'tipo_acao', e.target.value)}>
               {ACOES.map((op) => <option key={op.valor} value={op.valor}>{op.label}</option>)}
-            </select>
-            <input
+            </Select>
+            <Input
               required
               value={acao.valor}
               onChange={(e) => atualizarAcao(idx, 'valor', e.target.value)}
               placeholder={ACOES.find((op) => op.valor === acao.tipo_acao)?.placeholder}
-              className="flex-1 rounded-md border border-border px-3 py-2 text-sm"
+              className="flex-1"
             />
             {acoes.length > 1 && (
-              <button type="button" onClick={() => removerAcao(idx)} className="text-xs text-priority-critica">
+              <button type="button" onClick={() => removerAcao(idx)} className="mt-2.5 shrink-0 text-xs text-danger">
                 remover
               </button>
             )}
@@ -228,13 +213,9 @@ function NovaRegraForm({ categorias, onCriada }: { categorias: Categoria[]; onCr
         </button>
       </div>
 
-      <button
-        type="submit"
-        disabled={enviando}
-        className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark disabled:opacity-60"
-      >
-        {enviando ? 'Salvando...' : 'Salvar regra'}
-      </button>
+      <Button type="submit" loading={enviando} className="w-full">
+        Salvar regra
+      </Button>
     </form>
   )
 }

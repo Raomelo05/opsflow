@@ -1,7 +1,16 @@
 import { type FormEvent, useEffect, useState } from 'react'
+import { Plus, Settings, ShieldOff } from 'lucide-react'
 import { criarCategoria, listarCategorias } from '../services/categories'
 import { criarUsuario, listarUsuarios } from '../services/users'
 import { obterPerfil } from '../services/api'
+import { PageHeader } from '../components/ui/PageHeader'
+import { Card } from '../components/ui/Card'
+import { Button } from '../components/ui/Button'
+import { Input } from '../components/ui/Input'
+import { Select } from '../components/ui/Select'
+import { Table, TableHead, Th, TableBody, TableRow, Td } from '../components/ui/Table'
+import { LoadingSkeleton } from '../components/ui/LoadingSkeleton'
+import { EmptyState } from '../components/ui/EmptyState'
 import type { Categoria, Perfil, Usuario } from '../types'
 
 const PERFIS: Perfil[] = ['colaborador', 'analista', 'gestor', 'administrador']
@@ -11,19 +20,17 @@ export default function Admin() {
 
   if (perfilAtual !== 'administrador') {
     return (
-      <div className="rounded-lg border border-border bg-white p-6 text-sm text-slate">
-        Esta área é exclusiva do perfil Administrador.
-      </div>
+      <EmptyState
+        icon={ShieldOff}
+        title="Acesso restrito"
+        description="Esta área é exclusiva do perfil Administrador."
+      />
     )
   }
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-semibold text-ink">Administração</h1>
-        <p className="text-sm text-slate">Categorias e usuários do OpsFlow.</p>
-      </div>
-
+      <PageHeader title="Administração" subtitle="Categorias e usuários do OpsFlow." />
       <CategoriasSection />
       <UsuariosSection />
     </div>
@@ -58,53 +65,44 @@ function CategoriasSection() {
   }
 
   return (
-    <div className="rounded-lg border border-border bg-white p-5">
-      <h2 className="mb-4 text-sm font-medium text-ink">Categorias</h2>
+    <Card>
+      <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold text-ink">
+        <Settings className="h-4 w-4 text-ink-secondary" />
+        Categorias
+      </h2>
 
       <form onSubmit={handleSubmit} className="mb-4 flex flex-wrap items-end gap-3">
-        <div>
-          <label className="mb-1 block text-xs font-medium text-slate">Nome</label>
-          <input
-            required
-            value={nome}
-            onChange={(e) => setNome(e.target.value)}
-            placeholder="Ex.: Impressoras"
-            className="rounded-md border border-border px-3 py-2 text-sm"
-          />
+        <div className="w-48">
+          <Input label="Nome" required value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Ex.: Impressoras" />
         </div>
         <div className="flex-1">
-          <label className="mb-1 block text-xs font-medium text-slate">Descrição</label>
-          <input
-            value={descricao}
-            onChange={(e) => setDescricao(e.target.value)}
-            placeholder="Opcional"
-            className="w-full rounded-md border border-border px-3 py-2 text-sm"
-          />
+          <Input label="Descrição" value={descricao} onChange={(e) => setDescricao(e.target.value)} placeholder="Opcional" />
         </div>
-        <button
-          type="submit"
-          disabled={enviando}
-          className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark disabled:opacity-60"
-        >
-          {enviando ? 'Salvando...' : '+ Adicionar'}
-        </button>
+        <Button type="submit" size="sm" loading={enviando}>
+          <Plus className="h-3.5 w-3.5" />
+          Adicionar
+        </Button>
       </form>
 
-      <table className="w-full text-left text-sm">
-        <thead className="border-b border-border text-xs uppercase text-slate">
-          <tr><th className="py-2">Nome</th><th className="py-2">Descrição</th></tr>
-        </thead>
-        <tbody>
-          {carregando && <tr><td colSpan={2} className="py-3 text-slate">Carregando...</td></tr>}
-          {!carregando && categorias.map((c) => (
-            <tr key={c.id} className="border-b border-border last:border-0">
-              <td className="py-2 text-ink">{c.nome}</td>
-              <td className="py-2 text-slate">{c.descricao ?? '—'}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+      {carregando ? (
+        <LoadingSkeleton rows={3} height={32} />
+      ) : (
+        <Table>
+          <TableHead>
+            <Th>Nome</Th>
+            <Th>Descrição</Th>
+          </TableHead>
+          <TableBody>
+            {categorias.map((c) => (
+              <TableRow key={c.id}>
+                <Td className="font-medium">{c.nome}</Td>
+                <Td className="text-ink-secondary">{c.descricao ?? '—'}</Td>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )}
+    </Card>
   )
 }
 
@@ -138,46 +136,46 @@ function UsuariosSection() {
   }
 
   return (
-    <div className="rounded-lg border border-border bg-white p-5">
-      <h2 className="mb-4 text-sm font-medium text-ink">Usuários</h2>
+    <Card>
+      <h2 className="mb-4 text-sm font-semibold text-ink">Usuários</h2>
 
       <form onSubmit={handleSubmit} className="mb-4 grid gap-3 md:grid-cols-5">
-        <input required value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Nome"
-          className="rounded-md border border-border px-3 py-2 text-sm md:col-span-1" />
-        <input required type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="E-mail"
-          className="rounded-md border border-border px-3 py-2 text-sm md:col-span-1" />
-        <input required type="password" value={senha} onChange={(e) => setSenha(e.target.value)} placeholder="Senha provisória"
-          className="rounded-md border border-border px-3 py-2 text-sm md:col-span-1" />
-        <select value={perfil} onChange={(e) => setPerfil(e.target.value as Perfil)}
-          className="rounded-md border border-border px-3 py-2 text-sm md:col-span-1">
+        <Input required value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Nome" />
+        <Input required type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="E-mail" />
+        <Input required type="password" value={senha} onChange={(e) => setSenha(e.target.value)} placeholder="Senha provisória" />
+        <Select value={perfil} onChange={(e) => setPerfil(e.target.value as Perfil)}>
           {PERFIS.map((p) => <option key={p} value={p}>{p}</option>)}
-        </select>
-        <div className="flex gap-2 md:col-span-1">
-          <input value={pais} onChange={(e) => setPais(e.target.value)} placeholder="País"
-            className="w-full rounded-md border border-border px-3 py-2 text-sm" />
-          <button type="submit" disabled={enviando}
-            className="shrink-0 rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark disabled:opacity-60">
-            {enviando ? '...' : '+'}
-          </button>
+        </Select>
+        <div className="flex gap-2">
+          <Input value={pais} onChange={(e) => setPais(e.target.value)} placeholder="País" className="flex-1" />
+          <Button type="submit" size="sm" loading={enviando} className="shrink-0">
+            <Plus className="h-3.5 w-3.5" />
+          </Button>
         </div>
       </form>
 
-      <table className="w-full text-left text-sm">
-        <thead className="border-b border-border text-xs uppercase text-slate">
-          <tr><th className="py-2">Nome</th><th className="py-2">E-mail</th><th className="py-2">Perfil</th><th className="py-2">País</th></tr>
-        </thead>
-        <tbody>
-          {carregando && <tr><td colSpan={4} className="py-3 text-slate">Carregando...</td></tr>}
-          {!carregando && usuarios.map((u) => (
-            <tr key={u.id} className="border-b border-border last:border-0">
-              <td className="py-2 text-ink">{u.nome}</td>
-              <td className="py-2 font-mono text-xs text-slate">{u.email}</td>
-              <td className="py-2 text-slate">{u.perfil}</td>
-              <td className="py-2 text-slate">{u.pais ?? '—'}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+      {carregando ? (
+        <LoadingSkeleton rows={3} height={32} />
+      ) : (
+        <Table>
+          <TableHead>
+            <Th>Nome</Th>
+            <Th>E-mail</Th>
+            <Th>Perfil</Th>
+            <Th>País</Th>
+          </TableHead>
+          <TableBody>
+            {usuarios.map((u) => (
+              <TableRow key={u.id}>
+                <Td className="font-medium">{u.nome}</Td>
+                <Td className="font-mono text-xs text-ink-secondary">{u.email}</Td>
+                <Td className="text-ink-secondary">{u.perfil}</Td>
+                <Td className="text-ink-secondary">{u.pais ?? '—'}</Td>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )}
+    </Card>
   )
 }

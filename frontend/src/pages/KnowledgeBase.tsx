@@ -1,12 +1,23 @@
 import { type FormEvent, useEffect, useState } from 'react'
+import { Plus } from 'lucide-react'
+import { BookOpen } from 'lucide-react'
 import { listarCategorias } from '../services/categories'
 import { criarArtigo, listarArtigos } from '../services/kb'
+import { PageHeader } from '../components/ui/PageHeader'
+import { Button } from '../components/ui/Button'
+import { Card } from '../components/ui/Card'
+import { Input } from '../components/ui/Input'
+import { Textarea } from '../components/ui/Textarea'
+import { Select } from '../components/ui/Select'
+import { Drawer } from '../components/ui/Drawer'
+import { EmptyState } from '../components/ui/EmptyState'
+import { LoadingSkeleton } from '../components/ui/LoadingSkeleton'
 import type { ArtigoKB, Categoria } from '../types'
 
 export default function KnowledgeBase() {
   const [artigos, setArtigos] = useState<ArtigoKB[]>([])
   const [categorias, setCategorias] = useState<Categoria[]>([])
-  const [mostrarForm, setMostrarForm] = useState(false)
+  const [drawerAberto, setDrawerAberto] = useState(false)
   const [carregando, setCarregando] = useState(true)
 
   function carregar() {
@@ -23,48 +34,54 @@ export default function KnowledgeBase() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-ink">Base de Conhecimento</h1>
-          <p className="text-sm text-slate">Artigos de problema → solução usados na sugestão automática.</p>
-        </div>
-        <button
-          onClick={() => setMostrarForm((v) => !v)}
-          className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark"
-        >
-          {mostrarForm ? 'Cancelar' : '+ Novo artigo'}
-        </button>
-      </div>
+      <PageHeader
+        title="Base de Conhecimento"
+        subtitle="Artigos de problema → solução usados na sugestão automática."
+        actions={
+          <Button onClick={() => setDrawerAberto(true)}>
+            <Plus className="h-4 w-4" />
+            Novo artigo
+          </Button>
+        }
+      />
 
-      {mostrarForm && (
+      <Drawer open={drawerAberto} onClose={() => setDrawerAberto(false)} title="Novo artigo da Knowledge Base">
         <NovoArtigoForm
           categorias={categorias}
           onCriado={() => {
-            setMostrarForm(false)
+            setDrawerAberto(false)
             carregar()
           }}
         />
+      </Drawer>
+
+      {carregando ? (
+        <LoadingSkeleton rows={4} height={100} />
+      ) : artigos.length === 0 ? (
+        <EmptyState
+          icon={BookOpen}
+          title="Nenhum artigo cadastrado ainda"
+          description="Artigos da Knowledge Base são sugeridos automaticamente ao abrir um ticket parecido."
+          action={<Button size="sm" onClick={() => setDrawerAberto(true)}>+ Novo artigo</Button>}
+        />
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2">
+          {artigos.map((a) => (
+            <Card key={a.id} hoverable>
+              <p className="text-xs font-medium uppercase tracking-wide text-ink-secondary">
+                {a.categoria_id ? categoriaPorId[a.categoria_id] ?? 'Sem categoria' : 'Sem categoria'}
+              </p>
+              <h2 className="mt-1 font-semibold text-ink">{a.problema}</h2>
+              <p className="mt-2 whitespace-pre-wrap text-sm text-ink-secondary">{a.solucao}</p>
+              {a.palavras_chave && (
+                <p className="mt-3 font-mono text-xs text-ink-disabled">
+                  #{a.palavras_chave.split(',').map((k) => k.trim()).join(' #')}
+                </p>
+              )}
+            </Card>
+          ))}
+        </div>
       )}
-
-      {carregando && <p className="text-sm text-slate">Carregando artigos...</p>}
-
-      <div className="grid gap-4 md:grid-cols-2">
-        {!carregando && artigos.length === 0 && (
-          <p className="text-sm text-slate">Nenhum artigo cadastrado ainda.</p>
-        )}
-        {artigos.map((a) => (
-          <div key={a.id} className="rounded-lg border border-border bg-white p-5">
-            <p className="text-xs uppercase tracking-wide text-slate">
-              {a.categoria_id ? categoriaPorId[a.categoria_id] ?? 'Sem categoria' : 'Sem categoria'}
-            </p>
-            <h2 className="mt-1 font-medium text-ink">{a.problema}</h2>
-            <p className="mt-2 whitespace-pre-wrap text-sm text-slate">{a.solucao}</p>
-            {a.palavras_chave && (
-              <p className="mt-3 font-mono text-xs text-slate">#{a.palavras_chave.split(',').map((k) => k.trim()).join(' #')}</p>
-            )}
-          </div>
-        ))}
-      </div>
     </div>
   )
 }
@@ -93,63 +110,33 @@ function NovoArtigoForm({ categorias, onCriado }: { categorias: Categoria[]; onC
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 rounded-lg border border-border bg-white p-5">
-      <h2 className="text-sm font-medium text-ink">Novo artigo</h2>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <Input label="Problema" required value={problema} onChange={(e) => setProblema(e.target.value)} placeholder="Ex.: VPN não conecta" />
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <div>
-          <label className="mb-1 block text-xs font-medium text-slate">Problema</label>
-          <input
-            required
-            value={problema}
-            onChange={(e) => setProblema(e.target.value)}
-            placeholder="Ex.: VPN não conecta"
-            className="w-full rounded-md border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none"
-          />
-        </div>
-        <div>
-          <label className="mb-1 block text-xs font-medium text-slate">Categoria</label>
-          <select
-            value={categoriaId}
-            onChange={(e) => setCategoriaId(e.target.value ? Number(e.target.value) : '')}
-            className="w-full rounded-md border border-border px-3 py-2 text-sm"
-          >
-            <option value="">Sem categoria</option>
-            {categorias.map((c) => (
-              <option key={c.id} value={c.id}>{c.nome}</option>
-            ))}
-          </select>
-        </div>
-      </div>
+      <Select label="Categoria" value={categoriaId} onChange={(e) => setCategoriaId(e.target.value ? Number(e.target.value) : '')}>
+        <option value="">Sem categoria</option>
+        {categorias.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}
+      </Select>
 
-      <div>
-        <label className="mb-1 block text-xs font-medium text-slate">Solução (passo a passo)</label>
-        <textarea
-          required
-          rows={4}
-          value={solucao}
-          onChange={(e) => setSolucao(e.target.value)}
-          className="w-full rounded-md border border-border px-3 py-2 text-sm font-mono focus:border-primary focus:outline-none"
-        />
-      </div>
+      <Textarea
+        label="Solução (passo a passo)"
+        required
+        rows={5}
+        value={solucao}
+        onChange={(e) => setSolucao(e.target.value)}
+        className="font-mono"
+      />
 
-      <div>
-        <label className="mb-1 block text-xs font-medium text-slate">Palavras-chave (separadas por vírgula)</label>
-        <input
-          value={palavrasChave}
-          onChange={(e) => setPalavrasChave(e.target.value)}
-          placeholder="vpn, conexão, acesso remoto"
-          className="w-full rounded-md border border-border px-3 py-2 text-sm"
-        />
-      </div>
+      <Input
+        label="Palavras-chave (separadas por vírgula)"
+        value={palavrasChave}
+        onChange={(e) => setPalavrasChave(e.target.value)}
+        placeholder="vpn, conexão, acesso remoto"
+      />
 
-      <button
-        type="submit"
-        disabled={enviando}
-        className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark disabled:opacity-60"
-      >
-        {enviando ? 'Salvando...' : 'Salvar artigo'}
-      </button>
+      <Button type="submit" loading={enviando} className="w-full">
+        Salvar artigo
+      </Button>
     </form>
   )
 }

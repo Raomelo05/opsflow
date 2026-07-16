@@ -22,7 +22,7 @@ interface SlaIndicatorProps {
  */
 export function SlaIndicator({ prioridade, criadoEm, prazoSla, resolvido }: SlaIndicatorProps) {
   if (resolvido || !prazoSla) {
-    return <span className="font-mono text-xs text-ink/30">—</span>
+    return <span className="font-mono text-xs text-ink-disabled">—</span>
   }
 
   const agora = Date.now()
@@ -35,14 +35,16 @@ export function SlaIndicator({ prioridade, criadoEm, prazoSla, resolvido }: SlaI
 
   const vencido = restanteMs < 0
   const critico = !vencido && restanteMs < totalMs * 0.25
-  const cor = vencido ? 'bg-priority-critica' : critico ? 'bg-accent' : 'bg-primary'
+  const cor = vencido ? 'bg-status-vencido' : critico ? 'bg-warning' : 'bg-primary'
   const texto = vencido ? 'SLA vencido' : `vence em ${formatarRestante(restanteMs)}`
 
   return (
     <div className="flex w-28 flex-col gap-1">
-      <span className={`font-mono text-[11px] ${vencido ? 'text-priority-critica' : 'text-ink/60'}`}>{texto}</span>
-      <div className="h-1.5 w-full overflow-hidden rounded-full bg-border">
-        <div className={`h-full rounded-full ${cor}`} style={{ width: `${proporcao * 100}%` }} />
+      <span className={`font-mono text-[11px] ${vencido ? 'font-medium text-status-vencido' : 'text-ink-secondary'}`}>
+        {texto}
+      </span>
+      <div className="h-1.5 w-full overflow-hidden rounded-full bg-background-secondary">
+        <div className={`h-full rounded-full transition-all duration-300 ${cor}`} style={{ width: `${proporcao * 100}%` }} />
       </div>
     </div>
   )

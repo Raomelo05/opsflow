@@ -1,10 +1,17 @@
 import type { Prioridade } from '../types'
 
 const ESTILOS: Record<Prioridade, string> = {
-  critica: 'bg-priority-critica/10 text-priority-critica border-priority-critica/30',
-  alta: 'bg-priority-alta/10 text-priority-alta border-priority-alta/30',
-  media: 'bg-priority-media/10 text-priority-media border-priority-media/30',
-  baixa: 'bg-priority-baixa/10 text-priority-baixa border-priority-baixa/30',
+  critica: 'bg-priority-critica/10 text-priority-critica',
+  alta: 'bg-priority-alta/10 text-priority-alta',
+  media: 'bg-priority-media/10 text-priority-media',
+  baixa: 'bg-priority-baixa/10 text-priority-baixa',
+}
+
+const COR_PONTO: Record<Prioridade, string> = {
+  critica: 'bg-priority-critica',
+  alta: 'bg-priority-alta',
+  media: 'bg-priority-media',
+  baixa: 'bg-priority-baixa',
 }
 
 const LABEL: Record<Prioridade, string> = {
@@ -17,8 +24,9 @@ const LABEL: Record<Prioridade, string> = {
 export function PriorityBadge({ prioridade }: { prioridade: Prioridade }) {
   return (
     <span
-      className={`inline-flex items-center whitespace-nowrap rounded-full border px-2 py-0.5 text-xs font-medium ${ESTILOS[prioridade]}`}
+      className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium ${ESTILOS[prioridade]}`}
     >
+      <span className={`h-1.5 w-1.5 rounded-full ${COR_PONTO[prioridade]}`} />
       {LABEL[prioridade]}
     </span>
   )
